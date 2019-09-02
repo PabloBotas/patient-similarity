@@ -94,17 +94,25 @@ class Patient:
                        onset=onset, diagnoses=diagnoses, external_id=external_id)
 
     @classmethod
-    def iter_from_file(cls, filename, hpo):
+    def iter_from_json_file(cls, filename, hpo):
         with open(filename) as ifp:
             database = json.load(ifp)
             for row in database:
                 yield cls.from_row(row, hpo)
 
     @classmethod
+    def iter_from_file(cls, filename, hpo):
+        if filename.endswith('csv'):
+            return cls.iter_from_csv_file(filename, hpo)
+        else:
+            return cls.iter_from_json_file(filename, hpo)
+
+    @classmethod
     def iter_from_csv_file(cls, filename, hpo):
-        with open(filename, newline='') as ifp:
+        with open(filename, newline='\n') as ifp:
             reader = csv.reader(ifp)
             for row in reader:
+                # print('Row:', row)
                 if len(row) < 2:
                     raise FormatError('Expected at least two columns: id, phenotype1, ...')
                 pid, term_ids = [row[0], row[1:]]

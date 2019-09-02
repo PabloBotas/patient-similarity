@@ -124,6 +124,14 @@ def compare_patients(hpoic, patient1, patient2, scores=None, use_aoo=False):
     def jaccard(t1, t2):
         return len(t1.ancestors() & t2.ancestors()) / len(t1.ancestors() | t2.ancestors())
 
+    def dx29(t1, t2):
+        m = 2*hpoic.get_term_ic(mica(t1, t2))
+        ict1 = hpoic.get_term_ic(t1)
+        ict2 = hpoic.get_term_ic(t2)
+        maxic = max(ict1, ict2)
+        return max(0, maxic - m)
+
+
     # Jaccard = fraction of overlapping nodes
     if not scores or 'ui' in scores:
         out['ui'] = len(common_ancestors) / len(all_ancestors)
@@ -189,6 +197,13 @@ def compare_patients(hpoic, patient1, patient2, scores=None, use_aoo=False):
                for (t1, row) in zip(p1_terms, micas)]
         out['jc_avg'] = sum([sum(row) for row in jcs]) / (len(jcs) * len(jcs[0]))
         out['jc_best_avg'] = sum([max(row) for row in jcs]) / len(jcs)
+
+    if not scores or 'dx29' in scores:
+        erics = [[dx29(t1, t2)
+                  for t2 in p2_terms]
+                 for t1 in p1_terms]
+        # print(erics)
+        out['dx29'] = sum([min(row) for row in erics])/len(p1_terms.union(p2_terms))
 
     return out
 
@@ -285,7 +300,7 @@ def parse_args(args):
     parser.add_argument('--log', dest='loglevel', choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'], default='WARNING')
     parser.add_argument('--proto', metavar="file", help="HPO file of disease prototypes to compare against as well")
     parser.add_argument('-s', '--score', dest='scores', action='append', default=[],
-                        choices=['jaccard', 'resnik', 'lin', 'jc', 'owlsim', 'jz', 'ui', 'simgic', 'nsimgic', 'icca'],
+                        choices=['dx29', 'jaccard', 'resnik', 'lin', 'jc', 'owlsim', 'jz', 'ui', 'simgic', 'nsimgic', 'icca'],
                         help='Include this score in the output for each pair of patients')
 
     return parser.parse_args(args)
